@@ -1,13 +1,17 @@
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='your-secret-key-here')
-DEBUG = config('DEBUG', default=True, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+load_dotenv(BASE_DIR / '.env')
+
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG')
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '148.230.98.90']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -66,12 +70,12 @@ WSGI_APPLICATION = 'okane_backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        "ENGINE": config("SQL_ENGINE"),
-        "NAME": config("SQL_DATABASE"),
-        "USER": config("SQL_USER"),
-        "PASSWORD": config("SQL_PASSWORD"),
-        "HOST": config("SQL_HOST"),
-        "PORT": config("SQL_PORT"),
+        "ENGINE": os.environ.get("SQL_ENGINE"),
+        "NAME": os.environ.get("SQL_DATABASE"),
+        "USER": os.environ.get("SQL_USER"),
+        "PASSWORD": os.environ.get("SQL_PASSWORD"),
+        "HOST": os.environ.get("SQL_HOST"),
+        "PORT": os.environ.get("SQL_PORT"),
     },
 }
 
