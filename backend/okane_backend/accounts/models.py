@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from decimal import Decimal
 
 class User(AbstractUser):
@@ -55,3 +57,20 @@ class UserProfile(models.Model):
     
     def __str__(self):
         return f"{self.user.email} Profile"
+
+
+@receiver(post_save, sender=User)
+def create_user_related_objects(sender, instance, created, **kwargs):
+    """Create AccountBalance and UserProfile when a new user is created"""
+    if created:
+        AccountBalance.objects.get_or_create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_related_objects(sender, instance, **kwargs):
+    """Ensure AccountBalance and UserProfile exist"""
+    if not hasattr(instance, 'balance'):
+        AccountBalance.objects.create(user=instance)
+    if not hasattr(instance, 'profile'):
+        UserProfile.objects.create(user=instance)

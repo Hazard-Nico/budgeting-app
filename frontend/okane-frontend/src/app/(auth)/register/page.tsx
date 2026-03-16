@@ -2,53 +2,62 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { registerSchema, RegisterInput } from "@/lib/validations";
 import { useAuthStore } from "@/store/authStore";
+import { TUTORIAL_PENDING_KEY } from "@/store/tutorialStore";
 import api from "@/lib/api";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
+  const { setUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      language: "en",
-      currency: "IDR",
-    },
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+    password_confirm: "",
+    first_name: "",
+    last_name: "",
+    phone: "",
+    language: "en",
+    currency: "IDR",
   });
 
-  const onSubmit = async (data: RegisterInput) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (formData.password !== formData.password_confirm) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await api.post("/auth/register/", data);
-      const { tokens, user } = response.data;
+      const response = await api.post("/accounts/register/", formData);
+      const { access, refresh, user } = response.data;
 
-      // Store tokens
-      localStorage.setItem("access_token", tokens.access);
-      localStorage.setItem("refresh_token", tokens.refresh);
+      localStorage.setItem("access_token", access);
+      localStorage.setItem("refresh_token", refresh);
+      document.cookie = `access_token=${access}; path=/; max-age=86400`;
+      document.cookie = `refresh_token=${refresh}; path=/; max-age=604800`;
 
-      // Set user in store
       setUser(user);
 
+      localStorage.setItem(TUTORIAL_PENDING_KEY, "true");
+
       toast.success("Registration successful! Welcome to Okane Kakeibo! 🎉");
-      router.push("/setup");
+      router.push("/dashboard");
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.email?.[0] ||
         error.response?.data?.username?.[0] ||
+        error.response?.data?.password?.[0] ||
+        error.response?.data?.detail ||
         "Registration failed. Please try again.";
       toast.error(errorMessage);
     } finally {
@@ -57,14 +66,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-12">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-2xl"
       >
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Create Account 🚀
@@ -74,96 +82,170 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                label="First Name"
-                placeholder="John"
-                error={errors.first_name?.message}
-                {...register("first_name")}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  First Name
+                </label>
+                <Input
+                  type="text"
+                  placeholder="John"
+                  value={formData.first_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, first_name: e.target.value })
+                  }
+                />
+              </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Last Name
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Doe"
+                  value={formData.last_name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, last_name: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Username *
+              </label>
               <Input
-                label="Last Name"
-                placeholder="Doe"
-                error={errors.last_name?.message}
-                {...register("last_name")}
+                type="text"
+                placeholder="johndoe"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+                required
               />
             </div>
 
-            <Input
-              label="Username"
-              placeholder="johndoe"
-              error={errors.username?.message}
-              {...register("username")}
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              placeholder="john@example.com"
-              error={errors.email?.message}
-              {...register("email")}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email *
+              </label>
               <Input
-                label="Password"
-                type="password"
-                placeholder="••••••••"
-                error={errors.password?.message}
-                {...register("password")}
+                type="email"
+                placeholder="john@example.com"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                required
               />
+            </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
               <Input
-                label="Confirm Password"
-                type="password"
-                placeholder="••••••••"
-                error={errors.password2?.message}
-                {...register("password2")}
+                type="tel"
+                placeholder="+62 812 3456 7890"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password *
+                </label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password *
+                </label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password_confirm}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password_confirm: e.target.value })
+                  }
+                  required
+                  minLength={6}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Language
                 </label>
                 <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  {...register("language")}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.language}
+                  onChange={(e) =>
+                    setFormData({ ...formData, language: e.target.value })
+                  }
                 >
                   <option value="en">English</option>
                   <option value="id">Bahasa Indonesia</option>
+                  <option value="ja">日本語 (Japanese)</option>
                 </select>
-                {errors.language && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.language.message}
-                  </p>
-                )}
               </div>
 
-              <Input
-                label="Currency"
-                placeholder="IDR"
-                error={errors.currency?.message}
-                {...register("currency")}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Currency
+                </label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={formData.currency}
+                  onChange={(e) =>
+                    setFormData({ ...formData, currency: e.target.value })
+                  }
+                >
+                  <option value="IDR">IDR - Indonesian Rupiah</option>
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="JPY">JPY - Japanese Yen</option>
+                </select>
+              </div>
             </div>
 
-            <Button type="submit" className="w-full" isLoading={isLoading}>
-              Create Account
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Creating Account...
+                </>
+              ) : (
+                "Create Account"
+              )}
             </Button>
           </form>
 
-          {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 Sign in
               </Link>

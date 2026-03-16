@@ -8,15 +8,32 @@ class SavingsTrackerSerializer(serializers.ModelSerializer):
     progress_percentage = serializers.FloatField(read_only=True)
     remaining_amount = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
     
+    target_amount_formatted = serializers.SerializerMethodField()
+    current_amount_formatted = serializers.SerializerMethodField()
+    remaining_amount_formatted = serializers.SerializerMethodField()
+    
     class Meta:
         model = SavingsTracker
         fields = [
-            'id', 'user', 'goal_name', 'target_amount', 'current_amount',
-            'progress_percentage', 'remaining_amount', 'target_date',
-            'priority', 'notes', 'is_completed', 'completed_at',
+            'id', 'user', 'goal_name',
+            'target_amount', 'target_amount_formatted',
+            'current_amount', 'current_amount_formatted',
+            'progress_percentage',
+            'remaining_amount', 'remaining_amount_formatted',
+            'target_date', 'priority', 'notes',
+            'is_completed', 'completed_at',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'is_completed', 'completed_at', 'created_at', 'updated_at']
+    
+    def get_target_amount_formatted(self, obj):
+        return f"Rp {obj.target_amount:,.0f}".replace(',', '.')
+    
+    def get_current_amount_formatted(self, obj):
+        return f"Rp {obj.current_amount:,.0f}".replace(',', '.')
+    
+    def get_remaining_amount_formatted(self, obj):
+        return f"Rp {obj.remaining_amount:,.0f}".replace(',', '.')
     
     def validate(self, data):
         if data.get('target_amount') and data['target_amount'] <= 0:

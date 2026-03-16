@@ -1,59 +1,92 @@
 from rest_framework import serializers
 from .models import Transaction, Income, FixedExpense
+from accounts.serializers import UserSerializer
 
 
 class TransactionSerializer(serializers.ModelSerializer):
-    """Transaction serializer with validation"""
+    user = UserSerializer(read_only=True)
+    amount_formatted = serializers.SerializerMethodField()
     
     class Meta:
         model = Transaction
-        fields = '__all__'
-        read_only_fields = ('user', 'created_at', 'updated_at')
+        fields = [
+            'id', 'user', 'transaction_type', 'category',
+            'amount', 'amount_formatted', 'description', 'date', 'notes',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
     
-    def validate(self, attrs):
-        # Validate category for expense transactions
-        if attrs.get('transaction_type') == 'expense' and not attrs.get('category'):
-            raise serializers.ValidationError({
-                "category": "Category is required for expense transactions"
-            })
-        
-        # Validate amount
-        if attrs.get('amount') and attrs['amount'] <= 0:
-            raise serializers.ValidationError({
-                "amount": "Amount must be greater than 0"
-            })
-        
-        return attrs
+    def get_amount_formatted(self, obj):
+        return f"Rp {obj.amount:,.0f}".replace(',', '.')
+    
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than zero")
+        return value
 
 
 class IncomeSerializer(serializers.ModelSerializer):
-    """Income serializer"""
+    user = UserSerializer(read_only=True)
+    amount_formatted = serializers.SerializerMethodField()
     
     class Meta:
         model = Income
-        fields = '__all__'
-        read_only_fields = ('user', 'created_at', 'updated_at')
+        fields = [
+            'id', 'user', 'source', 'amount', 'amount_formatted',
+            'frequency', 'date', 'notes', 'is_recurring',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
     
-    def validate_amount(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Amount must be greater than 0")
-        return value
+    def get_amount_formatted(self, obj):
+        return f"Rp {obj.amount:,.0f}".replace(',', '.')
 
 
 class FixedExpenseSerializer(serializers.ModelSerializer):
-    """Fixed expense serializer"""
+    user = UserSerializer(read_only=True)
+    amount_formatted = serializers.SerializerMethodField()
     
     class Meta:
         model = FixedExpense
-        fields = '__all__'
-        read_only_fields = ('user', 'created_at', 'updated_at')
+        fields = [
+            'id', 'user', 'name', 'amount', 'amount_formatted',
+            'frequency', 'due_date', 'category', 'notes', 'is_active',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
     
-    def validate_due_date(self, value):
-        if value < 1 or value > 31:
-            raise serializers.ValidationError("Due date must be between 1 and 31")
-        return value
+    def get_amount_formatted(self, obj):
+        return f"Rp {obj.amount:,.0f}".replace(',', '.')
+
+
+class TransactionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = [
+            'transaction_type', 'category',
+            'amount', 'description', 'date', 'notes'
+        ]
     
-    def validate_amount(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Amount must be greater than 0")
-        return value
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class IncomeCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Income
+        fields = ['source', 'amount', 'frequency', 'date', 'notes', 'is_recurring']
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class FixedExpenseCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FixedExpense
+        fields = ['name', 'amount', 'frequency', 'due_date', 'category', 'notes', 'is_active']
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)

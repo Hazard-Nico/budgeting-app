@@ -11,6 +11,7 @@ export interface User {
   balance?: AccountBalance;
   created_at: string;
   updated_at: string;
+  phone: string;
 }
 
 export interface UserProfile {

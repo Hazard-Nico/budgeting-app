@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import Sidebar from "@/components/dashboard/Sidebar";
-import { Toaster } from "sonner";
+import TutorialOverlay from "@/components/tutorial/TutorialOverlay";
 import api from "@/lib/api";
 
 export default function DashboardLayout({
@@ -25,27 +25,30 @@ export default function DashboardLayout({
       }
 
       try {
-        const response = await api.get("/auth/me/");
+        const response = await api.get("/accounts/me/");
         setUser(response.data);
+        setLoading(false);
       } catch (error) {
         router.push("/login");
-      } finally {
-        setLoading(false);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [router, setUser, setLoading]);
 
-  if (!isAuthenticated) {
-    return null;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">{children}</main>
-      <Toaster position="top-right" richColors />
+      <TutorialOverlay />
     </div>
   );
 }

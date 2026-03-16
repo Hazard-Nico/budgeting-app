@@ -29,24 +29,26 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginInput) => {
     setIsLoading(true);
     try {
-      const response = await api.post("/auth/login/", data);
-      const { tokens, user } = response.data;
+      const response = await api.post("/accounts/login/", data);
+      const { access, refresh, user } = response.data;
 
-      // Store tokens
-      localStorage.setItem("access_token", tokens.access);
-      localStorage.setItem("refresh_token", tokens.refresh);
+      localStorage.setItem("access_token", access);
+      localStorage.setItem("refresh_token", refresh);
 
-      // Set user in store
+      document.cookie = `access_token=${access}; path=/; max-age=${60 * 60}`;
+      document.cookie = `refresh_token=${refresh}; path=/; max-age=${60 * 60 * 24 * 7}`;
+
       setUser(user);
 
       toast.success("Login successful!");
 
-      // Redirect based on setup status
       if (user.is_setup_complete) {
         router.push("/dashboard");
       } else {
         router.push("/setup");
       }
+      
+      router.refresh();
     } catch (error: any) {
       toast.error(
         error.response?.data?.detail || "Login failed. Please try again."
@@ -57,14 +59,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 to-primary-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md"
       >
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Welcome Back! 👋
@@ -74,7 +75,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <Input
               label="Username"
@@ -96,13 +96,12 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Don`t have an account?{" "}
+              Don't have an account?{" "}
               <Link
                 href="/register"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+                className="text-blue-600 hover:text-blue-700 font-medium"
               >
                 Sign up
               </Link>

@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Sum, Q
-from datetime import datetime, timedelta
+from django.db.models import Sum
+from datetime import datetime
 from .models import MonthlyBudget, WeeklyBudget
 from .serializers import (
     MonthlyBudgetSerializer, WeeklyBudgetSerializer,
@@ -20,15 +20,15 @@ class MonthlyBudgetViewSet(viewsets.ModelViewSet):
     ordering_fields = ['year', 'month', 'created_at']
     ordering = ['-year', '-month']
     search_fields = ['notes']
-    
+
     def get_queryset(self):
         return MonthlyBudget.objects.filter(user=self.request.user)
-    
+
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return MonthlyBudgetCreateSerializer
         return MonthlyBudgetSerializer
-    
+
     @action(detail=False, methods=['get'])
     def current(self, request):
         now = datetime.now()
@@ -37,40 +37,43 @@ class MonthlyBudgetViewSet(viewsets.ModelViewSet):
             month=now.month,
             year=now.year
         ).first()
-        
+
         if not budget:
             return Response(
                 {"detail": "No budget found for current month"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         serializer = self.get_serializer(budget)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
         budget = self.get_object()
-        
+
         transactions = Transaction.objects.filter(
             user=request.user,
             date__month=budget.month,
             date__year=budget.year,
             transaction_type='expense'
         )
-        
+
         category_spending = {
-            'needs': transactions.filter(category='needs').aggregate(total=Sum('amount'))['total'] or 0,
-            'wants': transactions.filter(category='wants').aggregate(total=Sum('amount'))['total'] or 0,
-            'culture': transactions.filter(category='culture').aggregate(total=Sum('amount'))['total'] or 0,
-            'unexpected': transactions.filter(category='unexpected').aggregate(total=Sum('amount'))['total'] or 0,
+            'survival': float(transactions.filter(category='survival').aggregate(total=Sum('amount'))['total'] or 0),
+            'optional': float(transactions.filter(category='optional').aggregate(total=Sum('amount'))['total'] or 0),
+            'culture': float(transactions.filter(category='culture').aggregate(total=Sum('amount'))['total'] or 0),
+            'extra': float(transactions.filter(category='extra').aggregate(total=Sum('amount'))['total'] or 0),
         }
-        
+
+        total_spent = sum(category_spending.values())
+        total_budget = float(budget.total_allocated)
+
         return Response({
             'budget': MonthlyBudgetSerializer(budget).data,
             'spending': category_spending,
-            'total_spent': sum(category_spending.values()),
-            'total_budget': budget.total_allocated,
-            'remaining': budget.remaining
+            'total_spent': total_spent,
+            'total_budget': total_budget,
+            'remaining': total_budget - total_spent,
         })
 
 
@@ -80,15 +83,15 @@ class WeeklyBudgetViewSet(viewsets.ModelViewSet):
     filterset_fields = ['monthly_budget', 'week_number']
     ordering_fields = ['week_number', 'start_date', 'created_at']
     ordering = ['week_number']
-    
+
     def get_queryset(self):
         return WeeklyBudget.objects.filter(monthly_budget__user=self.request.user)
-    
+
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return WeeklyBudgetCreateSerializer
         return WeeklyBudgetSerializer
-    
+
     @action(detail=False, methods=['get'])
     def current(self, request):
         today = datetime.now().date()
@@ -97,38 +100,41 @@ class WeeklyBudgetViewSet(viewsets.ModelViewSet):
             start_date__lte=today,
             end_date__gte=today
         ).first()
-        
+
         if not budget:
             return Response(
                 {"detail": "No budget found for current week"},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         serializer = self.get_serializer(budget)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):
         budget = self.get_object()
-        
+
         transactions = Transaction.objects.filter(
             user=request.user,
             date__gte=budget.start_date,
             date__lte=budget.end_date,
             transaction_type='expense'
         )
-        
+
         category_spending = {
-            'needs': transactions.filter(category='needs').aggregate(total=Sum('amount'))['total'] or 0,
-            'wants': transactions.filter(category='wants').aggregate(total=Sum('amount'))['total'] or 0,
-            'culture': transactions.filter(category='culture').aggregate(total=Sum('amount'))['total'] or 0,
-            'unexpected': transactions.filter(category='unexpected').aggregate(total=Sum('amount'))['total'] or 0,
+            'survival': float(transactions.filter(category='survival').aggregate(total=Sum('amount'))['total'] or 0),
+            'optional': float(transactions.filter(category='optional').aggregate(total=Sum('amount'))['total'] or 0),
+            'culture': float(transactions.filter(category='culture').aggregate(total=Sum('amount'))['total'] or 0),
+            'extra': float(transactions.filter(category='extra').aggregate(total=Sum('amount'))['total'] or 0),
         }
-        
+
+        total_spent = sum(category_spending.values())
+        total_budget = float(budget.total_allocated)
+
         return Response({
             'budget': WeeklyBudgetSerializer(budget).data,
             'spending': category_spending,
-            'total_spent': sum(category_spending.values()),
-            'total_budget': budget.total_allocated,
-            'remaining': budget.remaining
+            'total_spent': total_spent,
+            'total_budget': total_budget,
+            'remaining': total_budget - total_spent,
         })

@@ -56,7 +56,7 @@ export default function BalanceTracker({
             </div>
             <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
             <p className="text-2xl font-bold text-gray-900">
-              {currency} {stat.value.toLocaleString()}
+              {currency} {Number(stat.value || 0).toLocaleString()}
             </p>
           </motion.div>
         );
