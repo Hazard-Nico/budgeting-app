@@ -1,17 +1,17 @@
-from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from decimal import Decimal
 
+
 class User(AbstractUser):
-    """Custom User model"""
     LANGUAGE_CHOICES = [
         ('en', 'English'),
         ('id', 'Bahasa Indonesia'),
     ]
-    
+
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20, blank=True)
     language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default='en')
@@ -19,17 +19,15 @@ class User(AbstractUser):
     is_setup_complete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return self.email
 
 
 class AccountBalance(models.Model):
-    """User's account balance"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='balance')
     current_balance = models.DecimalField(
-        max_digits=15, 
-        decimal_places=2, 
+        max_digits=15, decimal_places=2,
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
@@ -37,16 +35,15 @@ class AccountBalance(models.Model):
     total_expenses = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     total_savings = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name_plural = "Account Balances"
-    
+
     def __str__(self):
         return f"{self.user.email} - Balance: {self.current_balance}"
 
 
 class UserProfile(models.Model):
-    """Extended user profile"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     bio = models.TextField(blank=True)
@@ -54,14 +51,15 @@ class UserProfile(models.Model):
     monthly_savings_goal = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.user.email} Profile"
 
 
 @receiver(post_save, sender=User)
 def create_user_related_objects(sender, instance, created, **kwargs):
-    """Create AccountBalance and UserProfile when a new user is created"""
+    if kwargs.get('raw', False):
+        return
     if created:
         AccountBalance.objects.get_or_create(user=instance)
         UserProfile.objects.get_or_create(user=instance)
@@ -69,8 +67,9 @@ def create_user_related_objects(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=User)
 def save_user_related_objects(sender, instance, **kwargs):
-    """Ensure AccountBalance and UserProfile exist"""
+    if kwargs.get('raw', False):
+        return
     if not hasattr(instance, 'balance'):
-        AccountBalance.objects.create(user=instance)
+        AccountBalance.objects.get_or_create(user=instance)
     if not hasattr(instance, 'profile'):
-        UserProfile.objects.create(user=instance)
+        UserProfile.objects.get_or_create(user=instance)
