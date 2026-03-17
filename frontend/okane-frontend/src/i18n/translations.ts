@@ -2,7 +2,6 @@ export type Language = "en" | "id" | "ja";
 
 export const translations = {
   en: {
-    // Nav
     nav_home: "Home",
     nav_monthly: "Monthly",
     nav_transactions: "Transactions",
@@ -14,7 +13,6 @@ export const translations = {
     nav_logout: "Logout",
     nav_quick_add: "Quick Add",
 
-    // Common
     save_changes: "Save Changes",
     cancel: "Cancel",
     delete: "Delete",
@@ -58,7 +56,6 @@ export const translations = {
     due: "Due",
     until: "Until",
 
-    // Dashboard
     dashboard_title: "Welcome back",
     dashboard_subtitle: "Here's your financial overview for",
     monthly_summary: "Monthly Summary",
@@ -76,7 +73,6 @@ export const translations = {
     set_balance: "Set Balance",
     on_this_page: "on this page",
 
-    // Transactions
     transactions_title: "Transactions",
     transactions_subtitle: "Manage your income, expenses, and savings",
     add_transaction: "Add Transaction",
@@ -101,7 +97,6 @@ export const translations = {
     start_date: "Start Date",
     end_date: "End Date",
 
-    // Budgets
     budgets_title: "Monthly Budgets",
     budgets_subtitle: "Plan and track your monthly spending",
     create_budget: "Create Budget",
@@ -123,7 +118,6 @@ export const translations = {
     fixed_expenses: "Fixed Expenses",
     savings: "Savings",
 
-    // Trackers
     trackers_title: "Financial Trackers",
     trackers_subtitle: "Track your savings, debts, loans, and subscriptions",
     savings_goals: "Savings Goals",
@@ -174,12 +168,14 @@ export const translations = {
     paid_off_label: "Paid Off!",
     completed_label: "Completed!",
 
-    // Reports
     reports_title: "Financial Reports",
     reports_subtitle: "Analyze your spending patterns and financial health",
     weekly_review: "Weekly Review",
     monthly_report: "Monthly Report",
     yearly_report: "Yearly Report",
+    weekly: "Weekly",
+    monthly: "Monthly",
+    yearly: "Yearly",
     generate_report: "Generate Report",
     generating: "Generating...",
     no_weekly_reports: "No weekly reports yet. Generate your first review.",
@@ -204,8 +200,24 @@ export const translations = {
     spending_leak: "Spending Leak Detected",
     top_category: "Top Category",
     category_breakdown: "Category Breakdown",
+    no_category_data: "No category data",
+    avg_savings: "Average Savings",
+    avg_expenses: "Average Expenses",
+    avg_income: "Average Income",
+    yearly_overview: "Yearly Overview",
+    net: "Net",
+    reflection_q1: "How much did I earn this period?",
+    reflection_q2: "How much did I spend this period?",
+    reflection_q3: "How much did I save this period?",
+    reflection_q4: "How is my savings quality?",
+    key_metrics: "Key Metrics",
+    budget_used: "Budget Used",
+    savings_rate: "Savings Rate",
+    spending_by_category: "Spending by Category",
+    avg_daily: "Avg Daily",
+    spending_distribution: "Spending Distribution",
+    insights: "Insights",
 
-    // Settings
     settings_title: "Settings",
     settings_subtitle: "Manage your account settings and preferences",
     profile_tab: "Profile",
@@ -232,7 +244,6 @@ export const translations = {
     monthly_savings_goal: "Monthly Savings Goal",
     save_goals: "Save Goals",
 
-    // Months
     january: "January",
     february: "February",
     march: "March",
@@ -450,6 +461,11 @@ export const translations = {
     spending_leak: "Kebocoran Pengeluaran Terdeteksi",
     top_category: "Kategori Teratas",
     category_breakdown: "Rincian Kategori",
+    no_category_data: "Belum ada kategori",
+    avg_savings: "Rata-rata Tabungan",
+    avg_expenses: "Rata-rata Pengeluaran",
+    avg_income: "Rata-rata Pemasukan",
+    yearly_overview: "Ringkasan Tahunan",
 
     // Settings
     settings_title: "Pengaturan",
@@ -696,6 +712,11 @@ export const translations = {
     spending_leak: "支出の漏れを検出",
     top_category: "上位カテゴリー",
     category_breakdown: "カテゴリー内訳",
+    no_category_data: "カテゴリはまだありません",
+    avg_savings: "平均貯蓄額",
+    avg_expenses: "平均支出額",
+    avg_income: "平均収入",
+    yearly_overview: "年次概要",
 
     // Settings
     settings_title: "設定",
