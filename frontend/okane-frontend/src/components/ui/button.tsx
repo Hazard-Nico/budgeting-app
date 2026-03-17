@@ -1,15 +1,16 @@
 "use client";
 
 import { ButtonHTMLAttributes, forwardRef } from "react";
-import { motion } from "framer-motion";
+import { motion, type HTMLMotionProps } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
-  size?: "sm" | "md" | "lg";
-  isLoading?: boolean;
-}
+type ButtonProps = Omit<HTMLMotionProps<"button">, "ref"> &
+  ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
+    size?: "sm" | "md" | "lg";
+    isLoading?: boolean;
+  };
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
